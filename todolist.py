@@ -234,8 +234,8 @@ class Todolist(QMainWindow):
 
     def add_task_to_google_calendar(self, task, event_time):
         creds = None
-        if os.path.exists('C:/Python/Todolist/client_secret_483712238000-lndurh15es91829o8hmp924daj9u0ov0.apps.googleusercontent.com.json.json'):
-            creds = Credentials.from_authorized_user_file('C:/Python/Todolist/client_secret_483712238000-lndurh15es91829o8hmp924daj9u0ov0.apps.googleusercontent.com.json.json', SCOPES)
+        if os.path.exists('Your file path'):
+            creds = Credentials.from_authorized_user_file('Your file path', SCOPES)
         else:
             QMessageBox.warning(self, "File Error", "Token file not found.")
             return
