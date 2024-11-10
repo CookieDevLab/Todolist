@@ -196,8 +196,9 @@ class Todolist(QMainWindow):
 
     def add_task_to_google_tasks(self, task, event_time):
         creds = None
-        credential_path = r'C:\Python\Todolist\credentials.json'
-        token_path = r'C:\Python\Todolist\token.json'
+        # Replace with your file path
+        credential_path = 'credentials.json'
+        token_path = 'token.json'
 
         # Load the credentials
         if os.path.exists(token_path):
