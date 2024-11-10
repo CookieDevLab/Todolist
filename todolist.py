@@ -7,15 +7,15 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QBrush, QColor
 import sqlite3
-import datetime
 import os
+import pytz
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
-# Scopes for the Google Calendar API
-SCOPES = ['https://www.googleapis.com/auth/calendar']
+SCOPES = ['https://www.googleapis.com/auth/tasks']
+
 
 class Todolist(QMainWindow):
     def __init__(self):
@@ -29,28 +29,23 @@ class Todolist(QMainWindow):
 
         layout = QVBoxLayout(self.central_widget)
 
-        # Title label
         title_label = QLabel("To-Do List")
         title_label.setAlignment(Qt.AlignCenter)
         title_label.setStyleSheet("font-size: 28px; font-weight: bold;")
         layout.addWidget(title_label)
 
-        # Task input
         task_layout = QHBoxLayout()
         self.task_input = QLineEdit()
         self.task_input.setPlaceholderText("Enter task")
         task_layout.addWidget(QLabel("Task:"))
         task_layout.addWidget(self.task_input)
 
-        # Priority input
         self.priority_box = QComboBox()
         self.priority_box.addItems(["High", "Medium", "Low"])
         task_layout.addWidget(QLabel("Priority:"))
         task_layout.addWidget(self.priority_box)
-
         layout.addLayout(task_layout)
 
-        # Event time input
         event_time_layout = QHBoxLayout()
         self.event_time_input = QLineEdit()
         self.event_time_input.setPlaceholderText("YYYY-MM-DD HH:MM")
@@ -58,10 +53,9 @@ class Todolist(QMainWindow):
         event_time_layout.addWidget(self.event_time_input)
         layout.addLayout(event_time_layout)
 
-        # Button layout
         button_layout = QHBoxLayout()
         self.add_task_button = QPushButton("Add Task")
-        self.add_task_button.clicked.connect(self.add_task)  # Add task and sync to Google Calendar
+        self.add_task_button.clicked.connect(self.add_task)
         button_layout.addWidget(self.add_task_button)
 
         self.mark_done_button = QPushButton("Mark Task as Done")
@@ -71,11 +65,9 @@ class Todolist(QMainWindow):
         self.delete_task_button = QPushButton("Delete Task")
         self.delete_task_button.clicked.connect(self.delete_task)
         button_layout.addWidget(self.delete_task_button)
-
         layout.addLayout(button_layout)
 
-        # Task table
-        self.task_table = QTableWidget(0, 5)  # Changed to 5 to accommodate status
+        self.task_table = QTableWidget(0, 5)
         self.task_table.setHorizontalHeaderLabels(["ID", "Task", "Priority", "Event Time", "Status"])
         self.task_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         layout.addWidget(self.task_table)
@@ -88,9 +80,9 @@ class Todolist(QMainWindow):
         self.create_table()
 
         self.priority_colors = {
-            "High": "#FF9999",    
-            "Medium": "#FFFF99",  
-            "Low": "#99FF99"      
+            "High": "#FF9999",
+            "Medium": "#FFFF99",
+            "Low": "#99FF99"
         }
 
         self.load_tasks()
@@ -116,7 +108,7 @@ class Todolist(QMainWindow):
         self.conn.commit()
         self.load_tasks()
 
-        self.add_task_to_google_calendar(task, event_time)
+        self.add_task_to_google_tasks(task, event_time)
 
     def load_tasks(self):
         self.task_table.setRowCount(0)
@@ -129,17 +121,28 @@ class Todolist(QMainWindow):
             self.task_table.insertRow(row_position)
             for i, item in enumerate(task):
                 self.task_table.setItem(row_position, i, QTableWidgetItem(str(item)))
-
-            priority = task[2]  
+            
+            priority = task[2]
             if priority in self.priority_colors:
                 color = self.priority_colors[priority]
                 self.task_table.item(row_position, 2).setBackground(QBrush(QColor(color)))
 
-                if self.dark_mode_toggle.isChecked():
-                    self.task_table.item(row_position, 2).setForeground(QBrush(QColor("#FFFFFF")))  
+            done = task[4]
+            status_text = "Done" if done else "Pending"
+            self.task_table.setItem(row_position, 4, QTableWidgetItem(status_text))
+
+            # Adjust row color based on mode
+            if self.dark_mode_toggle.isChecked():
+                if done:
+                    self.task_table.item(row_position, 4).setBackground(QBrush(QColor('#00FF00')))  # Green for done tasks
                 else:
-                    self.task_table.item(row_position, 2).setForeground(QBrush(QColor("#000000"))) 
-                    
+                    self.task_table.item(row_position, 4).setBackground(QBrush(QColor('#FF0000')))  # Red for pending tasks
+            else:
+                if done:
+                    self.task_table.item(row_position, 4).setBackground(QBrush(QColor('#d4edda')))  # Light green for done
+                else:
+                    self.task_table.item(row_position, 4).setBackground(QBrush(QColor('#f8d7da')))  # Light red for pending
+
     def mark_task_as_done(self):
         selected_row = self.task_table.currentRow()
         if selected_row == -1:
@@ -166,117 +169,63 @@ class Todolist(QMainWindow):
 
     def toggle_dark_mode(self):
         if self.dark_mode_toggle.isChecked():
-            # Apply dark mode styles
             self.setStyleSheet("""
-                QWidget {
-                    background-color: #2e2e2e;
-                    color: #f0f0f0;
-                }
-                QLineEdit, QComboBox, QTableWidget {
-                    background-color: #3e3e3e;
-                    color: #f0f0f0;
-                    border: 1px solid #565656;
-                    border-radius: 5px;
-                }
-                QPushButton {
-                    background-color: #4CAF50;
-                    color: white;
-                    border-radius: 10px;
-                    padding: 10px;
-                }
-                QPushButton:hover {
-                    background-color: #45a049;
-                }
-                QTableWidget {
-                    alternate-background-color: #4b4b4b;
-                    gridline-color: #666666;
-                }
-                QHeaderView::section {
-                    background-color: #454545;
-                    font-weight: bold;
-                    font-size: 14px;
-                    border: 1px solid #666666;
-                }
+                QWidget { background-color: #2e2e2e; color: #f0f0f0; }
+                QPushButton { background-color: #4CAF50; color: white; border-radius: 5px; }
+                QPushButton:hover { background-color: #45a049; }
+                QTableWidget { background-color: #3e3e3e; border: none; color: #f0f0f0; }
+                QTableWidget::item { border-bottom: 1px solid #555; padding: 10px; }
+                QTableWidget::item:selected { background-color: #5e5e5e; }
+                QTableWidget::horizontalHeader { background-color: #2e2e2e; color: white; }
+                QTableWidget::verticalHeader { background-color: #2e2e2e; color: white; }
+                QCheckBox { color: white; }
             """)
         else:
-            # Apply light mode styles
+            # White mode (Light mode) is now the default, so this will be used as the fallback style
             self.setStyleSheet("""
-                QWidget {
-                    background-color: #f9f9f9;
-                    color: #000000;
-                }
-                QLineEdit, QComboBox, QTableWidget {
-                    background-color: #ffffff;
-                    color: #000000;
-                    border: 1px solid #c9c9c9;
-                    border-radius: 5px;
-                }
-                QPushButton {
-                    background-color: #4CAF50;
-                    color: white;
-                    border-radius: 10px;
-                    padding: 10px;
-                }
-                QPushButton:hover {
-                    background-color: #45a049;
-                }
-                QTableWidget {
-                    alternate-background-color: #f9f9f9;
-                    gridline-color: #dcdcdc;
-                }
-                QHeaderView::section {
-                    background-color: #f0f0f0;
-                    font-weight: bold;
-                    font-size: 14px;
-                    border: 1px solid #dcdcdc;
-                }
+                QWidget { background-color: #f9f9f9; color: #000000; }
+                QPushButton { background-color: #007BFF; color: white; border-radius: 5px; }
+                QPushButton:hover { background-color: #0056b3; }
+                QTableWidget { background-color: #ffffff; border: none; color: #000000; }
+                QTableWidget::item { border-bottom: 1px solid #ddd; padding: 10px; }
+                QTableWidget::item:selected { background-color: #cce5ff; }
+                QTableWidget::horizontalHeader { background-color: #f0f0f0; color: black; }
+                QTableWidget::verticalHeader { background-color: #f0f0f0; color: black; }
+                QCheckBox { color: black; }
             """)
 
-    def add_task_to_google_calendar(self, task, event_time):
+    def add_task_to_google_tasks(self, task, event_time):
         creds = None
-        if os.path.exists('Your file path'):
-            creds = Credentials.from_authorized_user_file('Your file path', SCOPES)
-        else:
-            QMessageBox.warning(self, "File Error", "Token file not found.")
-            return
+        credential_path = r'C:\Python\Todolist\credentials.json'
+        token_path = r'C:\Python\Todolist\token.json'
 
+        # Load the credentials
+        if os.path.exists(token_path):
+            creds = Credentials.from_authorized_user_file(token_path, SCOPES)
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    'C:/Python/Todolist/client_secret_483712238000-lndurh15es91829o8hmp924daj9u0ov0.apps.googleusercontent.com.json', SCOPES)
+                flow = InstalledAppFlow.from_client_secrets_file(credential_path, SCOPES)
                 creds = flow.run_local_server(port=0)
-                with open('token.json', 'w') as token:
-                    token.write(creds.to_json())
+            with open(token_path, 'w') as token:
+                token.write(creds.to_json())
 
-        service = build('calendar', 'v3', credentials=creds)
-
-        start_time = datetime.datetime.strptime(event_time, "%Y-%m-%d %H:%M")
-        end_time = start_time + datetime.timedelta(hours=1)  # Assume 1-hour duration
-        event = {
-            'summary': task,
-            'start': {
-                'dateTime': start_time.isoformat(),
-                'timeZone': 'UTC',
-            },
-            'end': {
-                'dateTime': end_time.isoformat(),
-                'timeZone': 'UTC',
-            },
-        }
+        service = build('tasks', 'v1', credentials=creds)
 
         try:
-            event = service.events().insert(calendarId='primary', body=event).execute()
-            print('Event created: %s' % (event.get('htmlLink')))
+            task_details = {
+                'title': task,
+                'due': event_time
+            }
+            service.tasks().insert(tasklist='@default', body=task_details).execute()
         except Exception as e:
-            QMessageBox.warning(self, "Google Calendar Error", str(e))
+            print(f"An error occurred: {e}")
+            QMessageBox.warning(self, "Google Tasks Error", "Failed to add task to Google Tasks.")
 
-def main():
+
+if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = Todolist()
     window.show()
     sys.exit(app.exec_())
-
-if __name__ == "__main__":
-    main()
