@@ -30,14 +30,16 @@ A desktop-based To-Do List application built using **PyQt5** that helps you mana
 ```bash
 git clone https://github.com/<your-username>/todolist-google-tasks.git
 cd todolist-google-tasks
+```
 
 ## 🛠️ Installation
 
 ### Install dependencies
 ```bash
 pip install -r requirements.txt
+```
 
 ### Run the App
 ```bash 
 python main.py
-
+```
