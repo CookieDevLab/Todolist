@@ -43,3 +43,22 @@ pip install -r requirements.txt
 ```bash 
 python main.py
 ```
+On first run, a browser will open for Google sign-in. Once authorized, a token.json file will be saved for future runs.
+
+### 🧰 Tech Stack
+- Python 3
+- PyQt5
+- SQLite3
+- Google Tasks API
+- Google Auth Libraries (google-auth, google-auth-oauthlib, google-api-python-client)
+
+### 🔐 Google API Setup
+1.Go to Google Cloud Console
+2.Create a new project or use an existing one
+3.Enable the Google Tasks API
+3.Go to Credentials > Create credentials > OAuth 2.0 Client ID
+4.Download the credentials.json and place it in the root directory of this project
+
+### 🙌 Acknowledgements
+[Google API Python Client](https://github.com/googleapis/google-api-python-client)
+[PyQt5 Documentation](https://doc.qt.io/qtforpython-6/)
