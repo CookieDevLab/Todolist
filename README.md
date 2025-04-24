@@ -53,11 +53,11 @@ On first run, a browser will open for Google sign-in. Once authorized, a token.j
 - Google Auth Libraries (google-auth, google-auth-oauthlib, google-api-python-client)
 
 ### 🔐 Google API Setup
-1.Go to Google Cloud Console
-2.Create a new project or use an existing one
-3.Enable the Google Tasks API
-4.Go to Credentials > Create credentials > OAuth 2.0 Client ID
-5.Download the credentials.json and place it in the root directory of this project
+1. Go to Google Cloud Console
+2. Create a new project or use an existing one
+3. Enable the Google Tasks API
+4. Go to Credentials > Create credentials > OAuth 2.0 Client ID
+5. Download the credentials.json and place it in the root directory of this project
 
 ### 🙌 Acknowledgements
 [Google API Python Client](https://github.com/googleapis/google-api-python-client)
